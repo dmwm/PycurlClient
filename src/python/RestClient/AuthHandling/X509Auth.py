@@ -2,6 +2,7 @@ from getpass import getpass
 from RestClient.ErrorHandling.RestClientExceptions import ClientAuthException
 
 import os, sys
+import certifi
 
 class X509Auth(object):
     def __init__(self, ca_path=None, ssl_cert=None, ssl_key=None, ssl_verifypeer=True, ca_info=None):
@@ -15,6 +16,9 @@ class X509Auth(object):
 
         if not self._ca_path:
             self.__search_ca_path()
+        if not self._ca_info:
+            # then searches for the CA bundle to verify peer
+            self._ca_info = certifi.where()
 
         #Check if ssl_cert, ssl_key and ca_path do exist
         if not (os.path.isfile(self._ssl_key) and os.path.isfile(self._ssl_cert)):
@@ -89,9 +93,9 @@ class X509Auth(object):
         curl_object.setopt(curl_object.SSLCERT, self._ssl_cert)
         curl_object.setopt(curl_object.SSLKEY, self._ssl_key)
         if self._ca_info:
-            pass
-            # comment out as suggested. YG 2021-Oct-11
-            #curl_object.setopt(curl_object.CAINFO, self._ca_info)
+            curl_object.setopt(curl_object.CAINFO, self._ca_info)
+        else:
+            curl_object.setopt(curl_object.CAINFO, certifi.where())
 
         if self.ssl_key_pass:
             curl_object.setopt(curl_object.SSLKEYPASSWD, self.ssl_key_pass)
